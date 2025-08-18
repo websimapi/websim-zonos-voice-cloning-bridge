@@ -132,8 +132,9 @@ async function startServer() {
                 'index.js',
                 'package.json',
                 'README.md',
-                'dockerfile', // Note: filename might not have extension in some environments
-                'docker-commands.sh'
+                'dockerfile',
+                'docker-commands.sh',
+                'index.html' // Added index.html to the zip
             ];
             
             // Add root files that exist

@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const audioOutput = document.getElementById('audio-output');
     const outputSection = document.getElementById('output-section');
     const loadingOverlay = document.getElementById('loading-overlay');
-    const downloadZipBtn = document.getElementById('download-zip-btn');
     const downloadAudioLink = document.getElementById('download-audio-link');
 
     const speedSlider = document.getElementById('speed');
@@ -82,36 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
             loadingOverlay.hidden = true;
             generateBtn.disabled = false;
             generateBtn.removeAttribute('aria-busy');
-        }
-    });
-
-    downloadZipBtn.addEventListener('click', async (event) => {
-        event.preventDefault();
-        const originalText = downloadZipBtn.textContent;
-        downloadZipBtn.setAttribute('aria-busy', 'true');
-        downloadZipBtn.textContent = 'Zipping...';
-
-        try {
-            const response = await fetch('/download-zip');
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `Server responded with status ${response.status}`);
-            }
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = 'zonos-web-bridge.zip';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            a.remove();
-        } catch (error) {
-            alert(`Failed to download project ZIP: ${error.message}`);
-        } finally {
-            downloadZipBtn.removeAttribute('aria-busy');
-            downloadZipBtn.textContent = originalText;
         }
     });
 
