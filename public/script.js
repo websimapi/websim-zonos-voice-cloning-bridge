@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const audioOutput = document.getElementById('audio-output');
     const outputSection = document.getElementById('output-section');
     const loadingOverlay = document.getElementById('loading-overlay');
+    const downloadZipBtn = document.getElementById('download-zip-btn');
+    const downloadAudioLink = document.getElementById('download-audio-link');
 
     const speedSlider = document.getElementById('speed');
     const speedValue = document.getElementById('speed-value');
@@ -50,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingOverlay.hidden = false;
         generateBtn.disabled = true;
         generateBtn.setAttribute('aria-busy', 'true');
+        downloadAudioLink.hidden = true;
 
         const formData = new FormData(ttsForm);
         
@@ -68,6 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const audioUrl = URL.createObjectURL(audioBlob);
             
             audioOutput.src = audioUrl;
+            downloadAudioLink.href = audioUrl;
+            downloadAudioLink.hidden = false;
             outputSection.hidden = false;
             audioOutput.play();
 
@@ -80,8 +85,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    downloadZipBtn.addEventListener('click', async (event) => {
+        event.preventDefault();
+        const originalText = downloadZipBtn.textContent;
+        downloadZipBtn.setAttribute('aria-busy', 'true');
+        downloadZipBtn.textContent = 'Zipping...';
+
+        try {
+            const response = await fetch('/download-zip');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Server responded with status ${response.status}`);
+            }
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'zonos-web-bridge.zip';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        } catch (error) {
+            alert(`Failed to download project ZIP: ${error.message}`);
+        } finally {
+            downloadZipBtn.removeAttribute('aria-busy');
+            downloadZipBtn.textContent = originalText;
+        }
+    });
+
     // Initial and periodic health checks
     checkServerStatus();
     setInterval(checkServerStatus, 10000); // Check every 10 seconds
 });
-

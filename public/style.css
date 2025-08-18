@@ -57,7 +57,12 @@ header {
     margin-top: 1rem;
 }
 
+#download-audio-link {
+    margin-top: 1rem;
+    display: inline-block;
+    width: auto;
+}
+
 button {
     width: 100%;
 }
-

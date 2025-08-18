@@ -1,6 +1,7 @@
 const express = require('express');
 const { spawn } = require('child_process');
-const fs = require('fs').promises;
+const fs = require('fs'); // Use synchronous fs for existsSync
+const fsPromises = require('fs').promises;
 const path = require('path');
 const axios = require('axios');
 const multer = require('multer');
@@ -39,7 +40,7 @@ const runCommand = (command, args, options = {}) => {
 
 const checkPathExists = async (path) => {
     try {
-        await fs.access(path);
+        await fsPromises.access(path);
         return true;
     } catch {
         return false;
@@ -124,37 +125,49 @@ async function startServer() {
 
     app.get('/download-zip', (req, res) => {
         log('Request received to download project zip.');
-        const zip = new AdmZip();
-        
-        const filesToZip = [
-            'index.js',
-            'package.json',
-            'package-lock.json',
-            'README.md',
-            'Dockerfile',
-            'docker-commands.sh',
-            '.gitignore'
-        ];
-        
-        filesToZip.forEach(file => {
-            const filePath = path.join(__dirname, file);
-            // Check if file exists before adding
-            try {
-                fs.access(filePath);
-                zip.addLocalFile(filePath);
-            } catch (e) {
-                // file might not exist (e.g. package-lock.json), so we just log it and continue
-                log(`Could not find ${file} to add to zip, skipping.`);
+        try {
+            const zip = new AdmZip();
+            
+            const filesToZip = [
+                'index.js',
+                'package.json',
+                'README.md',
+                'dockerfile', // Note: filename might not have extension in some environments
+                'docker-commands.sh'
+            ];
+            
+            // Add root files that exist
+            filesToZip.forEach(file => {
+                const filePath = path.join(__dirname, file);
+                if (fs.existsSync(filePath)) {
+                    zip.addLocalFile(filePath);
+                } else {
+                    log(`Skipping non-existent file: ${file}`);
+                }
+            });
+    
+            // Add package-lock.json if it exists
+            const packageLockPath = path.join(__dirname, 'package-lock.json');
+            if (fs.existsSync(packageLockPath)) {
+                zip.addLocalFile(packageLockPath);
             }
-        });
-        
-        zip.addLocalFolder(path.join(__dirname, 'public'), 'public');
+    
+            // Add public folder
+            const publicFolderPath = path.join(__dirname, 'public');
+            if (fs.existsSync(publicFolderPath)) {
+                zip.addLocalFolder(publicFolderPath, 'public');
+            }
 
-        const zipBuffer = zip.toBuffer();
+            const zipBuffer = zip.toBuffer();
 
-        res.setHeader('Content-Type', 'application/zip');
-        res.setHeader('Content-Disposition', 'attachment; filename=zonos-web-bridge.zip');
-        res.send(zipBuffer);
+            res.setHeader('Content-Type', 'application/zip');
+            res.setHeader('Content-Disposition', 'attachment; filename=zonos-web-bridge.zip');
+            res.send(zipBuffer);
+
+        } catch (error) {
+            log(`Error creating zip file: ${error.message}`);
+            res.status(500).json({ error: 'Failed to create project zip file.' });
+        }
     });
 
     app.post('/tts', upload.single('audioReference'), async (req, res) => {
@@ -167,7 +180,7 @@ async function startServer() {
             log(`Received TTS request for language: ${language}`);
 
             // 1. Read audio file and convert to base64 data URI
-            const audioBuffer = await fs.readFile(req.file.path);
+            const audioBuffer = await fsPromises.readFile(req.file.path);
             const mimeType = req.file.mimetype;
             const base64Audio = `data:${mimeType};base64,${audioBuffer.toString('base64')}`;
 
@@ -208,7 +221,7 @@ async function startServer() {
         } finally {
             // Clean up uploaded file
             if (req.file) {
-                await fs.unlink(req.file.path);
+                await fsPromises.unlink(req.file.path);
             }
         }
     });
