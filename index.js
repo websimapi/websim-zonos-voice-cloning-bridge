@@ -124,51 +124,9 @@ async function startServer() {
     });
 
     app.get('/download-zip', (req, res) => {
-        log('Request received to download project zip.');
-        try {
-            const zip = new AdmZip();
-            
-            const filesToZip = [
-                'index.js',
-                'package.json',
-                'README.md',
-                'dockerfile',
-                'docker-commands.sh',
-                'index.html' // Added index.html to the zip
-            ];
-            
-            // Add root files that exist
-            filesToZip.forEach(file => {
-                const filePath = path.join(__dirname, file);
-                if (fs.existsSync(filePath)) {
-                    zip.addLocalFile(filePath);
-                } else {
-                    log(`Skipping non-existent file: ${file}`);
-                }
-            });
-    
-            // Add package-lock.json if it exists
-            const packageLockPath = path.join(__dirname, 'package-lock.json');
-            if (fs.existsSync(packageLockPath)) {
-                zip.addLocalFile(packageLockPath);
-            }
-    
-            // Add public folder
-            const publicFolderPath = path.join(__dirname, 'public');
-            if (fs.existsSync(publicFolderPath)) {
-                zip.addLocalFolder(publicFolderPath, 'public');
-            }
-
-            const zipBuffer = zip.toBuffer();
-
-            res.setHeader('Content-Type', 'application/zip');
-            res.setHeader('Content-Disposition', 'attachment; filename=zonos-web-bridge.zip');
-            res.send(zipBuffer);
-
-        } catch (error) {
-            log(`Error creating zip file: ${error.message}`);
-            res.status(500).json({ error: 'Failed to create project zip file.' });
-        }
+        // This route is deprecated and will be removed. The new method is a static download.html.
+        // We'll redirect to the new page for any old links.
+        res.redirect('/download.html');
     });
 
     app.post('/tts', upload.single('audioReference'), async (req, res) => {

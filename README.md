@@ -39,7 +39,7 @@ Before you begin, ensure you have the following installed on your system:
 ## Setup and Running
 
 1.  **Download and Unzip:**
-    Download the project files and extract them to a new folder on your computer.
+    Download the project `zonos-web-bridge.zip` file and extract it to a new folder on your computer.
 
 2.  **Install Node.js Dependencies:**
     Open a terminal or command prompt, navigate into the project folder, and run:
@@ -100,4 +100,4 @@ EXPOSE 7860
 
 # Start the application
 CMD [ "node", "index.js" ]
-
+```
