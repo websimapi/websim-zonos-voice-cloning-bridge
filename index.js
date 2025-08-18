@@ -5,6 +5,7 @@ const path = require('path');
 const axios = require('axios');
 const multer = require('multer');
 const cors = require('cors');
+const AdmZip = require('adm-zip');
 
 const app = express();
 const port = 3000;
@@ -121,6 +122,41 @@ async function startServer() {
         }
     });
 
+    app.get('/download-zip', (req, res) => {
+        log('Request received to download project zip.');
+        const zip = new AdmZip();
+        
+        const filesToZip = [
+            'index.js',
+            'package.json',
+            'package-lock.json',
+            'README.md',
+            'Dockerfile',
+            'docker-commands.sh',
+            '.gitignore'
+        ];
+        
+        filesToZip.forEach(file => {
+            const filePath = path.join(__dirname, file);
+            // Check if file exists before adding
+            try {
+                fs.access(filePath);
+                zip.addLocalFile(filePath);
+            } catch (e) {
+                // file might not exist (e.g. package-lock.json), so we just log it and continue
+                log(`Could not find ${file} to add to zip, skipping.`);
+            }
+        });
+        
+        zip.addLocalFolder(path.join(__dirname, 'public'), 'public');
+
+        const zipBuffer = zip.toBuffer();
+
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', 'attachment; filename=zonos-web-bridge.zip');
+        res.send(zipBuffer);
+    });
+
     app.post('/tts', upload.single('audioReference'), async (req, res) => {
         try {
             if (!req.file) {
@@ -187,4 +223,3 @@ startServer().catch(err => {
     console.error('Failed to start server:', err);
     process.exit(1);
 });
-
